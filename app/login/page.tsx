@@ -22,7 +22,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
   const handleLogin = () => {
     // Basic email/password validation (replace with secure authentication)
     if (email === "admin@example.com" && password === "password") {
-      router.push("/admin/dashboard")
+      router.push("/admin/poll")
     } else {
       setError("Invalid credentials")
     }

@@ -10,7 +10,7 @@ const Page = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/admin/dashboard');
+    router.push('/admin/poll');
   }, []);
 
   return <div className='flex justify-center items-center h-screen'>

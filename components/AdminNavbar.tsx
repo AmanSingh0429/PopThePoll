@@ -11,7 +11,7 @@ import { useState } from "react";
 const navItems = [
   { name: "Polls", href: "/admin/poll" },
   { name: "Create Polls", href: "/admin/poll/create" },
-  { name: "Create Admin", href: "/admin/create" },
+  // { name: "Create Admin", href: "/admin/create" },
 ];
 
 export default function AdminNavbar() {

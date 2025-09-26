@@ -13,7 +13,9 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  Pause,
+  Play
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -182,12 +184,15 @@ const PollList = () => {
       day: 'numeric'
     })
   }
+  const handleTogglePoll = (pollId: string, e: any) => {
+    alert("Poll toggled")
+  }
 
   return (
     <div className="space-y-6">
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow p-0">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -205,7 +210,7 @@ const PollList = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow p-0">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -223,7 +228,7 @@ const PollList = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow p-0">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -242,8 +247,8 @@ const PollList = () => {
       </div>
 
       {/* Search and Filter Bar */}
-      <Card className="shadow-sm border-0 bg-white">
-        <CardContent className="p-4">
+      <Card className="shadow-sm border-0 bg-white py-3">
+        <CardContent className="px-4">
           <div className="flex flex-col lg:flex-row gap-3 items-center">
             <div className="flex-1 w-full lg:w-auto relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -346,7 +351,7 @@ const PollList = () => {
                       <div className="p-2 bg-blue-50 rounded-lg mt-1">
                         <List className="h-4 w-4 text-blue-600" />
                       </div>
-                      <div className="flex-1 min-w-0 space-y-3">
+                      <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                             {poll.title}
@@ -377,7 +382,7 @@ const PollList = () => {
                         </div>
 
                         {/* Leading Option */}
-                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                        <div className="bg-gray-50 rounded-lg space-y-2">
                           <div className="flex justify-between items-center">
                             <span className="text-sm font-medium text-gray-700">Leading option</span>
                             <span className="text-sm font-semibold text-green-600">
@@ -408,7 +413,7 @@ const PollList = () => {
                         e.stopPropagation()
                         handleViewPoll(poll.id)
                       }}
-                      className="h-8 px-3 text-xs"
+                      className="h-8 px-3 text-xs w-full"
                     >
                       <Eye className="h-3 w-3 mr-1" />
                       View
@@ -420,10 +425,31 @@ const PollList = () => {
                         e.stopPropagation()
                         handleDeletePoll(poll.id, e)
                       }}
-                      className="h-8 px-3 text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                      className="h-8 px-3 text-xs w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                     >
                       <Trash2 className="h-3 w-3 mr-1" />
                       Delete
+                    </Button>
+                    <Button
+                      variant={poll.isActive ? "destructive" : "default"}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleTogglePoll(poll.id, e)
+                      }}
+                      className="h-8 px-3 text-xs w-full"
+                    >
+                      {poll.isActive ? (
+                        <>
+                          <Pause className="h-3 w-3 mr-1" />
+                          Deactivate
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-3 w-3 mr-1" />
+                          Activate
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
