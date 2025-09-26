@@ -50,60 +50,62 @@ const CreatePolls = () => {
   }
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Poll</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="poll-title">Poll Title</Label>
-            <Input
-              id="poll-title"
-              placeholder="Enter your poll question..."
-              value={newPoll.title}
-              onChange={(e) => setNewPoll((prev) => ({ ...prev, title: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Poll Options</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={addPollOption}
-                disabled={newPoll.options.length >= 10}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Option
-              </Button>
+      <div className="md:h-[calc(100vh-210px)] h-[calc(100vh-190px)]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Create New Poll</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="poll-title">Poll Title</Label>
+              <Input
+                id="poll-title"
+                placeholder="Enter your poll question..."
+                value={newPoll.title}
+                onChange={(e) => setNewPoll((prev) => ({ ...prev, title: e.target.value }))}
+              />
             </div>
 
-            {newPoll.options.map((option, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  placeholder={`Option ${index + 1}`}
-                  value={option}
-                  onChange={(e) => {
-                    const newOptions = [...newPoll.options]
-                    newOptions[index] = e.target.value
-                    setNewPoll((prev) => ({ ...prev, options: newOptions }))
-                  }}
-                />
-                {newPoll.options.length > 2 && (
-                  <Button variant="outline" size="icon" onClick={() => removePollOption(index)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Poll Options</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addPollOption}
+                  disabled={newPoll.options.length >= 10}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Option
+                </Button>
               </div>
-            ))}
-          </div>
 
-          <Button onClick={createPoll} className="w-full">
-            Create Poll
-          </Button>
-        </CardContent>
-      </Card>
+              {newPoll.options.map((option, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    placeholder={`Option ${index + 1}`}
+                    value={option}
+                    onChange={(e) => {
+                      const newOptions = [...newPoll.options]
+                      newOptions[index] = e.target.value
+                      setNewPoll((prev) => ({ ...prev, options: newOptions }))
+                    }}
+                  />
+                  {newPoll.options.length > 2 && (
+                    <Button variant="outline" size="icon" onClick={() => removePollOption(index)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <Button onClick={createPoll} className="w-full">
+              Create Poll
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </>
   )
 }

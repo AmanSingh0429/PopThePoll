@@ -122,7 +122,7 @@ const PollList = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
   const [sortBy, setSortBy] = useState<"newest" | "votes" | "title">("newest")
   const [currentPage, setCurrentPage] = useState(1)
-  const pollsPerPage = 4
+  const pollsPerPage = 10
 
   const handleViewPoll = (pollId: string) => {
     router.push(`poll/${pollId}`)
