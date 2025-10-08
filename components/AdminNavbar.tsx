@@ -17,6 +17,10 @@ const navItems = [
 export default function AdminNavbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const handleLogout = () => {
+    sessionStorage.removeItem("auth");
+    window.location.href = "/login";
+  }
 
   return (
     <Card className="border-0 shadow-sm bg-background/50 backdrop-blur-sm">
@@ -52,7 +56,7 @@ export default function AdminNavbar() {
               ))}
             </nav>
 
-            <Button variant="destructive" size="sm">
+            <Button variant="destructive" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

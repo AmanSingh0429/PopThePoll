@@ -51,6 +51,8 @@ const Page = ({ params }: { params: { id: string } }) => {
   const [voteResults, setVoteResults] = useState<VoteResult[]>([])
   const [totalVotes, setTotalVotes] = useState(0)
   const [successDialogOpen, setSuccessDialogOpen] = useState(false)
+  const [voterId, setVoterId] = useState();
+
 
   const id = params.id
   const [currentStep, setCurrentStep] = useState<PollStep>("info")
@@ -124,6 +126,8 @@ const Page = ({ params }: { params: { id: string } }) => {
       if (response.status === 200) {
         setCurrentStep("vote")
       }
+      console.log(response.data)
+      setVoterId(response.data.voterId)
     } catch (error: any) {
       console.error("Error verifying OTP:", error)
       setError(error.response?.data?.message || "Invalid verification code. Please try again.")
@@ -143,20 +147,16 @@ const Page = ({ params }: { params: { id: string } }) => {
       setError(null)
 
       // Submit the vote
-      const voteResponse = await axios.post("http://localhost:8000/vote", {
+      const voteResponse = await axios.post("http://localhost:8000/votes/", {
         pollId: poll.id,
         optionId: selectedOption,
-        voterEmail: user.email,
-        voterName: user.name
+        voterId
       })
-
-      // Fetch updated results
-      const resultsResponse = await axios.get(`http://localhost:8000/poll/${id}/results`)
-      setVoteResults(resultsResponse.data.options)
-      setTotalVotes(resultsResponse.data.totalVotes)
-
-      setCurrentStep("results")
+      if (voteResponse.status !== 200) {
+        setError("Failed to submit vote")
+      }
       setSuccessDialogOpen(true)
+      handleReset()
     } catch (error: any) {
       console.error("Error submitting vote:", error)
       if (error.response?.status === 409) {
@@ -457,7 +457,7 @@ const Page = ({ params }: { params: { id: string } }) => {
                 </Card>
               )}
 
-              {currentStep === "results" && (
+              {/* {currentStep === "results" && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -497,7 +497,7 @@ const Page = ({ params }: { params: { id: string } }) => {
                     </div>
                   </CardContent>
                 </Card>
-              )}
+              )} */}
             </div>
           </div>
         </div>

@@ -88,6 +88,7 @@ const mockVoters: Voter[] = [
 ]
 
 const PollAnalytics = ({ params }: { params: { id: string } }) => {
+
   const pollId = params.id
   const router = useRouter()
   const [poll, setPoll] = useState<Poll | null>(null)
@@ -96,6 +97,12 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
   const [voteFilter, setVoteFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
   const votersPerPage = 10
+  useEffect(() => {
+    const session = sessionStorage.getItem("auth")
+    if (!session) {
+      router.push("/login")
+    }
+  }, [])
 
   useEffect(() => {
     const foundPoll = mockPolls.find(p => p.id === pollId)

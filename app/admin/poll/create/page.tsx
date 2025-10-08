@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,8 +14,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import axios from "axios"
+import { useRouter } from "next/navigation"
 
 const CreatePolls = () => {
+  const router = useRouter();
+  useEffect(() => {
+    const session = sessionStorage.getItem("auth")
+    if (!session) {
+      router.push("/login")
+    }
+  }, [])
   const backendurl = process.env.BACKEND_BASE_URL
   const [newPoll, setNewPoll] = useState({
     title: "",

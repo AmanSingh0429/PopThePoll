@@ -22,6 +22,12 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
   const handleLogin = () => {
     // Basic email/password validation (replace with secure authentication)
     if (email === "admin@example.com" && password === "password") {
+      const userData = {
+        isLoggedIn: true,
+        userEmail: email
+      };
+
+      sessionStorage.setItem("auth", JSON.stringify(userData));
       router.push("/admin/poll")
     } else {
       setError("Invalid credentials")
