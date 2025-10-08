@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,126 +15,160 @@ import {
   ChevronRight,
   TrendingUp,
   Pause,
-  Play
+  Play,
+  Copy,
+  Check,
+  Loader2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import axios from "axios"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 interface PollOption {
   id: string
   text: string
-  votes: number
+  pollId: string
+}
+
+interface Votes {
+  id: string
+  voterId: string
+  optionId: string
+  pollId: string
+  createdAt: string
 }
 
 interface Poll {
   id: string
   title: string
-  options: PollOption[]
-  totalVotes: number
-  isActive: boolean
+  active: boolean
   createdAt: string
+  options: PollOption[]
+  votes: Votes[]
 }
 
 const PollList = () => {
   const router = useRouter()
-  const mockPolls: Poll[] = [
-    {
-      id: "1",
-      title: "What is your favorite programming language?",
-      options: [
-        { id: "js", text: "JavaScript", votes: 45 },
-        { id: "py", text: "Python", votes: 32 },
-        { id: "ts", text: "TypeScript", votes: 28 },
-        { id: "go", text: "Go", votes: 15 },
-      ],
-      totalVotes: 120,
-      isActive: true,
-      createdAt: "2024-01-15"
-    },
-    {
-      id: "2",
-      title: "Which framework do you prefer for web development?",
-      options: [
-        { id: "react", text: "React", votes: 67 },
-        { id: "vue", text: "Vue.js", votes: 23 },
-        { id: "angular", text: "Angular", votes: 18 },
-        { id: "svelte", text: "Svelte", votes: 12 },
-      ],
-      totalVotes: 120,
-      isActive: true,
-      createdAt: "2024-01-10"
-    },
-    {
-      id: "3",
-      title: "What's your preferred database system?",
-      options: [
-        { id: "mysql", text: "MySQL", votes: 40 },
-        { id: "postgres", text: "PostgreSQL", votes: 35 },
-        { id: "mongodb", text: "MongoDB", votes: 25 },
-        { id: "redis", text: "Redis", votes: 20 },
-      ],
-      totalVotes: 120,
-      isActive: false,
-      createdAt: "2024-01-05"
-    },
-    {
-      id: "4",
-      title: "Which cloud platform do you use most frequently?",
-      options: [
-        { id: "aws", text: "AWS", votes: 55 },
-        { id: "azure", text: "Azure", votes: 35 },
-        { id: "gcp", text: "Google Cloud", votes: 25 },
-        { id: "digitalocean", text: "DigitalOcean", votes: 15 },
-      ],
-      totalVotes: 130,
-      isActive: true,
-      createdAt: "2024-01-20"
-    },
-    {
-      id: "5",
-      title: "What's your preferred code editor?",
-      options: [
-        { id: "vscode", text: "VS Code", votes: 80 },
-        { id: "webstorm", text: "WebStorm", votes: 20 },
-        { id: "sublime", text: "Sublime Text", votes: 15 },
-        { id: "vim", text: "Vim", votes: 10 },
-      ],
-      totalVotes: 125,
-      isActive: false,
-      createdAt: "2024-01-03"
-    },
-    {
-      id: "6",
-      title: "Which mobile platform do you develop for?",
-      options: [
-        { id: "ios", text: "iOS", votes: 45 },
-        { id: "android", text: "Android", votes: 40 },
-        { id: "both", text: "Both", votes: 30 },
-        { id: "other", text: "Other", votes: 15 },
-      ],
-      totalVotes: 130,
-      isActive: true,
-      createdAt: "2024-01-18"
-    },
-  ]
-
-  const [polls, setPolls] = useState<Poll[]>(mockPolls)
+  const [polls, setPolls] = useState<Poll[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
   const [sortBy, setSortBy] = useState<"newest" | "votes" | "title">("newest")
   const [currentPage, setCurrentPage] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [pollToDelete, setPollToDelete] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [copiedPollId, setCopiedPollId] = useState<string | null>(null)
+  const [togglingPolls, setTogglingPolls] = useState<Set<string>>(new Set())
+
   const pollsPerPage = 10
+
+  useEffect(() => {
+    const fetchPolls = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const response = await axios.get("http://localhost:8000/poll")
+        console.log(response.data)
+        setPolls(response.data)
+      } catch (error) {
+        console.error("Failed to fetch polls:", error)
+        setError("Failed to load polls. Please try again later.")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchPolls()
+  }, [])
+
+  const getTopOption = (poll: Poll) => {
+    const totalVotes = poll.votes.length
+    const voteCounts: { [key: string]: number } = {}
+    const votes = poll.votes
+
+    votes.forEach(vote => {
+      const optionId = vote.optionId
+      voteCounts[optionId] = (voteCounts[optionId] || 0) + 1
+    })
+
+    let mostVotedOptionId = null
+    let maxVotes = 0
+
+    for (const optionId in voteCounts) {
+      if (voteCounts[optionId] > maxVotes) {
+        maxVotes = voteCounts[optionId]
+        mostVotedOptionId = optionId
+      }
+    }
+
+    let mostVotedOptionText = 'No votes yet'
+    if (mostVotedOptionId !== null) {
+      const mostVotedOption = poll.options.find(
+        option => String(option.id) === String(mostVotedOptionId)
+      )
+      if (mostVotedOption) {
+        mostVotedOptionText = mostVotedOption.text
+      }
+    }
+
+    return {
+      totalVotes,
+      mostVotedOptionText,
+      optionId: mostVotedOptionId,
+      votes: maxVotes
+    }
+  }
 
   const handleViewPoll = (pollId: string) => {
     router.push(`poll/${pollId}`)
   }
 
-  const handleDeletePoll = (pollId: string, event: React.MouseEvent) => {
+  const handleDeleteClick = (pollId: string, event: React.MouseEvent) => {
     event.stopPropagation()
-    if (window.confirm("Are you sure you want to delete this poll? This action cannot be undone.")) {
-      setPolls(polls.filter(poll => poll.id !== pollId))
+    setPollToDelete(pollId)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!pollToDelete) return
+
+    try {
+      setIsDeleting(true)
+      await axios.delete(`http://localhost:8000/poll/${pollToDelete}`)
+      setPolls(polls.filter(poll => poll.id !== pollToDelete))
+      setDeleteDialogOpen(false)
+      setPollToDelete(null)
+
       if (filteredPolls.length <= pollsPerPage && currentPage > 1) {
         setCurrentPage(1)
       }
+    } catch (error) {
+      console.error("Failed to delete poll:", error)
+      setError("Failed to delete poll. Please try again.")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const copyPollLink = async (pollId: string, event: React.MouseEvent) => {
+    event.stopPropagation()
+    const pollUrl = `http://localhost:3000/${pollId}`
+
+    try {
+      await navigator.clipboard.writeText(pollUrl)
+      setCopiedPollId(pollId)
+      setTimeout(() => setCopiedPollId(null), 2000)
+    } catch (err) {
+      console.error('Failed to copy poll link:', err)
     }
   }
 
@@ -143,20 +177,20 @@ const PollList = () => {
     .filter(poll => {
       const matchesSearch = poll.title.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = statusFilter === "all" ||
-        (statusFilter === "active" && poll.isActive) ||
-        (statusFilter === "inactive" && !poll.isActive)
+        (statusFilter === "active" && poll.active) ||
+        (statusFilter === "inactive" && !poll.active)
 
       return matchesSearch && matchesStatus
     })
-    .sort((a, b) => {
-      if (sortBy === "newest") {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      } else if (sortBy === "votes") {
-        return b.totalVotes - a.totalVotes
-      } else {
-        return a.title.localeCompare(b.title)
-      }
-    })
+  // .sort((a, b) => {
+  //   if (sortBy === "newest") {
+  //     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  //   } else if (sortBy === "votes") {
+  //     return b.totalVotes - a.totalVotes
+  //   } else {
+  //     return a.title.localeCompare(b.title)
+  //   }
+  // })
 
   // Pagination logic
   const indexOfLastPoll = currentPage * pollsPerPage
@@ -164,17 +198,8 @@ const PollList = () => {
   const currentPolls = filteredPolls.slice(indexOfFirstPoll, indexOfLastPoll)
   const totalPages = Math.ceil(filteredPolls.length / pollsPerPage)
 
-  const totalVotes = polls.reduce((sum, poll) => sum + poll.totalVotes, 0)
-  const activePolls = polls.filter(p => p.isActive).length
-
   const getVotePercentage = (votes: number, total: number) => {
     return total > 0 ? Math.round((votes / total) * 100) : 0
-  }
-
-  const getLeadingOption = (options: PollOption[]) => {
-    return options.reduce((leading, option) =>
-      option.votes > leading.votes ? option : leading
-      , options[0])
   }
 
   const formatDate = (dateString: string) => {
@@ -184,70 +209,84 @@ const PollList = () => {
       day: 'numeric'
     })
   }
-  const handleTogglePoll = (pollId: string, e: any) => {
-    alert("Poll toggled")
+
+  const handleTogglePoll = async (pollId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    try {
+      setTogglingPolls(prev => new Set(prev).add(pollId))
+      const response = await axios.patch(`http://localhost:8000/poll/${pollId}/toggle`)
+
+      setPolls(polls.map(poll => {
+        if (poll.id === pollId) {
+          return {
+            ...poll,
+            active: !poll.active
+          }
+        }
+        return poll
+      }))
+    } catch (error) {
+      console.error("Failed to toggle poll:", error)
+      setError("Failed to update poll status. Please try again.")
+    } finally {
+      setTogglingPolls(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(pollId)
+        return newSet
+      })
+    }
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow p-0">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Polls</p>
-                <p className="text-2xl font-bold mt-1">{polls.length}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-500" />
-                  <span className="text-xs text-green-600">+2 this week</span>
-                </div>
-              </div>
-              <div className="p-2 bg-blue-100 rounded-full">
-                <List className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <p className="text-gray-600">Loading polls...</p>
+        </div>
+      </div>
+    )
+  }
 
-        <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow p-0">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Votes</p>
-                <p className="text-2xl font-bold mt-1">{totalVotes.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-500" />
-                  <span className="text-xs text-green-600">+150 today</span>
-                </div>
-              </div>
-              <div className="p-2 bg-green-100 rounded-full">
-                <Users className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow p-0">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Polls</p>
-                <p className="text-2xl font-bold mt-1">{activePolls}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {Math.round((activePolls / polls.length) * 100)}% of total
-                </p>
-              </div>
-              <div className="p-2 bg-orange-100 rounded-full">
-                <BarChart3 className="h-5 w-5 text-orange-600" />
-              </div>
+  if (error && polls.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+              >
+                Try Again
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+          {error}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setError(null)}
+            className="ml-2 h-auto p-1"
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
 
       {/* Search and Filter Bar */}
-      <Card className="shadow-sm border-0 bg-white py-3">
+      {/* <Card className="shadow-sm border-0 bg-white py-3">
         <CardContent className="px-4">
           <div className="flex flex-col lg:flex-row gap-3 items-center">
             <div className="flex-1 w-full lg:w-auto relative">
@@ -292,7 +331,7 @@ const PollList = () => {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Polls List Header with Pagination */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -336,7 +375,9 @@ const PollList = () => {
       {/* Polls List */}
       <div className="space-y-3">
         {currentPolls.map((poll) => {
-          const leadingOption = getLeadingOption(poll.options)
+          const leadingOption = getTopOption(poll)
+          const isToggling = togglingPolls.has(poll.id)
+
           return (
             <Card
               key={poll.id}
@@ -351,17 +392,36 @@ const PollList = () => {
                       <div className="p-2 bg-blue-50 rounded-lg mt-1">
                         <List className="h-4 w-4 text-blue-600" />
                       </div>
-                      <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex-1 min-w-0 space-y-2">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                             {poll.title}
                           </h3>
                           <Badge
-                            variant={poll.isActive ? "default" : "secondary"}
+                            variant={poll.active ? "default" : "secondary"}
                             className="shrink-0 text-xs"
                           >
-                            {poll.isActive ? "Active" : "Inactive"}
+                            {poll.active ? "Active" : "Inactive"}
                           </Badge>
+                        </div>
+
+                        {/* Poll Link */}
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
+                            http://localhost:3000/{poll.id}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => copyPollLink(poll.id, e)}
+                            className="h-6 w-6 p-0 hover:bg-gray-200"
+                          >
+                            {copiedPollId === poll.id ? (
+                              <Check className="h-3 w-3 text-green-600" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </Button>
                         </div>
 
                         <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -372,7 +432,7 @@ const PollList = () => {
                           <span>•</span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {poll.totalVotes} votes
+                            {poll.votes.length} votes
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
@@ -382,21 +442,21 @@ const PollList = () => {
                         </div>
 
                         {/* Leading Option */}
-                        <div className="bg-gray-50 rounded-lg space-y-2">
+                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                           <div className="flex justify-between items-center">
                             <span className="text-sm font-medium text-gray-700">Leading option</span>
                             <span className="text-sm font-semibold text-green-600">
-                              {getVotePercentage(leadingOption.votes, poll.totalVotes)}%
+                              {getVotePercentage(leadingOption.votes, leadingOption.totalVotes)}%
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-1.5">
                             <div
                               className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
-                              style={{ width: `${getVotePercentage(leadingOption.votes, poll.totalVotes)}%` }}
+                              style={{ width: `${getVotePercentage(leadingOption.votes, leadingOption.totalVotes)}%` }}
                             />
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-600 truncate mr-2">{leadingOption.text}</span>
+                            <span className="text-xs text-gray-600 truncate mr-2">{leadingOption.mostVotedOptionText}</span>
                             <span className="text-xs font-medium shrink-0">{leadingOption.votes} votes</span>
                           </div>
                         </div>
@@ -421,25 +481,27 @@ const PollList = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeletePoll(poll.id, e)
-                      }}
+                      onClick={(e) => handleDeleteClick(poll.id, e)}
+                      disabled={isDeleting && pollToDelete === poll.id}
                       className="h-8 px-3 text-xs w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                     >
-                      <Trash2 className="h-3 w-3 mr-1" />
+                      {isDeleting && pollToDelete === poll.id ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3 w-3 mr-1" />
+                      )}
                       Delete
                     </Button>
                     <Button
-                      variant={poll.isActive ? "destructive" : "default"}
+                      variant={poll.active ? "destructive" : "default"}
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleTogglePoll(poll.id, e)
-                      }}
+                      onClick={(e) => handleTogglePoll(poll.id, e)}
+                      disabled={isToggling}
                       className="h-8 px-3 text-xs w-full"
                     >
-                      {poll.isActive ? (
+                      {isToggling ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : poll.active ? (
                         <>
                           <Pause className="h-3 w-3 mr-1" />
                           Deactivate
@@ -462,33 +524,76 @@ const PollList = () => {
           <Card className="border-0 text-center py-12">
             <CardContent>
               <div className="text-gray-500 text-base mb-3">
-                No polls found matching your criteria
+                {polls.length === 0 ? "No polls created yet" : "No polls found matching your criteria"}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSearchTerm("")
-                  setStatusFilter("all")
-                  setCurrentPage(1)
-                }}
-              >
-                Clear all filters
-              </Button>
+              {polls.length === 0 ? (
+                <Button
+                  onClick={() => router.push('/create-poll')}
+                >
+                  Create Your First Poll
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm("")
+                    setStatusFilter("all")
+                    setCurrentPage(1)
+                  }}
+                >
+                  Clear all filters
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
       </div>
 
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Poll</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this poll? This action cannot be undone and all votes will be permanently lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Poll"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Bottom Pagination Info */}
-      {totalPages > 1 && (
+      {/* {totalPages > 1 && (
         <div className="flex justify-center items-center text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
           <span>
             Showing {indexOfFirstPoll + 1}-{Math.min(indexOfLastPoll, filteredPolls.length)} of{" "}
             {filteredPolls.length} polls
           </span>
         </div>
-      )}
+      )} */}
     </div>
   )
 }
