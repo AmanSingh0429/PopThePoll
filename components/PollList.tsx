@@ -403,26 +403,27 @@ const PollList = () => {
                           >
                             {poll.active ? "Active" : "Inactive"}
                           </Badge>
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
+                              http://localhost:3000/{poll.id}
+                            </code>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => copyPollLink(poll.id, e)}
+                              className="h-6 w-6 p-0 hover:bg-gray-200"
+                            >
+                              {copiedPollId === poll.id ? (
+                                <Check className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
+                          </div>
                         </div>
 
                         {/* Poll Link */}
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
-                            http://localhost:3000/{poll.id}
-                          </code>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => copyPollLink(poll.id, e)}
-                            className="h-6 w-6 p-0 hover:bg-gray-200"
-                          >
-                            {copiedPollId === poll.id ? (
-                              <Check className="h-3 w-3 text-green-600" />
-                            ) : (
-                              <Copy className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </div>
+
 
                         <div className="flex items-center gap-3 text-sm text-gray-600">
                           <span className="flex items-center gap-1">
@@ -432,7 +433,7 @@ const PollList = () => {
                           <span>•</span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {poll.votes.length} votes
+                            {poll.votes.length} vote(s)
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
@@ -457,7 +458,7 @@ const PollList = () => {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-gray-600 truncate mr-2">{leadingOption.mostVotedOptionText}</span>
-                            <span className="text-xs font-medium shrink-0">{leadingOption.votes} votes</span>
+                            <span className="text-xs font-medium shrink-0">{leadingOption.votes} vote(s)</span>
                           </div>
                         </div>
                       </div>
