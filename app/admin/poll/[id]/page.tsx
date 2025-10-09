@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Trash2, ArrowLeft, Users, BarChart3, PieChart, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import { Trash2, ArrowLeft, Users, BarChart3, PieChart, Search, ChevronLeft, ChevronRight, CloudFog } from "lucide-react"
 import {
   BarChart,
   Bar,
@@ -21,82 +21,95 @@ import {
   Legend,
 } from "recharts"
 import { useRouter } from "next/navigation"
+import axios, { all } from "axios"
+
+interface Votes {
+  id: string,
+  voterId: string,
+  optionId: string,
+  pollId: string,
+  createdAt: string,
+  voter: {
+    id: string,
+    name: string
+    email: string
+    verified: boolean
+    createdAt: string
+  },
+  option: {
+    id: string,
+    text: string,
+    pollId: string
+  }
+}
 
 interface PollOption {
   id: string
   text: string
-  votes: number
+  pollId: string
+  votes: Votes[]
 }
-
-interface Voter {
-  id: string
-  name: string
-  email: string
-  vote: string
-  votedAt: string
-}
-
 interface Poll {
   id: string
   title: string
   options: PollOption[]
-  totalVotes: number
-  isActive: boolean
+  active: boolean
 }
 
-const mockPolls: Poll[] = [
-  {
-    id: "1",
-    title: "What is your favorite programming language?",
-    options: [
-      { id: "js", text: "JavaScript", votes: 45 },
-      { id: "py", text: "Python", votes: 32 },
-      { id: "ts", text: "TypeScript", votes: 28 },
-      { id: "go", text: "Go", votes: 15 },
-    ],
-    totalVotes: 120,
-    isActive: true,
-  },
-  {
-    id: "2",
-    title: "Which framework do you prefer for web development?",
-    options: [
-      { id: "react", text: "React", votes: 67 },
-      { id: "vue", text: "Vue.js", votes: 23 },
-      { id: "angular", text: "Angular", votes: 18 },
-      { id: "svelte", text: "Svelte", votes: 10 },
-      { id: "next", text: "Next.js", votes: 2 },
-    ],
-    totalVotes: 120,
-    isActive: true,
-  },
-]
+// const mockPolls: Poll[] = [
+//   {
+//     id: "1",
+//     title: "What is your favorite programming language?",
+//     options: [
+//       { id: "js", text: "JavaScript", votes: 45 },
+//       { id: "py", text: "Python", votes: 32 },
+//       { id: "ts", text: "TypeScript", votes: 28 },
+//       { id: "go", text: "Go", votes: 15 },
+//     ],
+//     totalVotes: 120,
+//     isActive: true,
+//   },
+//   {
+//     id: "2",
+//     title: "Which framework do you prefer for web development?",
+//     options: [
+//       { id: "react", text: "React", votes: 67 },
+//       { id: "vue", text: "Vue.js", votes: 23 },
+//       { id: "angular", text: "Angular", votes: 18 },
+//       { id: "svelte", text: "Svelte", votes: 10 },
+//       { id: "next", text: "Next.js", votes: 2 },
+//     ],
+//     totalVotes: 120,
+//     isActive: true,
+//   },
+// ]
 
-const mockVoters: Voter[] = [
-  { id: "1", name: "John Doe", email: "john@example.com", vote: "JavaScript", votedAt: "2024-01-15 10:30" },
-  { id: "2", name: "Jane Smith", email: "jane@example.com", vote: "Python", votedAt: "2024-01-15 11:15" },
-  { id: "3", name: "Mike Johnson", email: "mike@example.com", vote: "TypeScript", votedAt: "2024-01-15 12:00" },
-  { id: "4", name: "Sarah Wilson", email: "sarah@example.com", vote: "JavaScript", votedAt: "2024-01-15 14:20" },
-  { id: "5", name: "Tom Brown", email: "tom@example.com", vote: "Go", votedAt: "2024-01-15 15:45" },
-  { id: "6", name: "Alice Johnson", email: "alice@example.com", vote: "JavaScript", votedAt: "2024-01-15 16:30" },
-  { id: "7", name: "Bob Williams", email: "bob@example.com", vote: "Python", votedAt: "2024-01-15 17:15" },
-  { id: "8", name: "Carol Davis", email: "carol@example.com", vote: "TypeScript", votedAt: "2024-01-16 09:00" },
-  { id: "9", name: "David Miller", email: "david@example.com", vote: "JavaScript", votedAt: "2024-01-16 10:30" },
-  { id: "10", name: "Eva Garcia", email: "eva@example.com", vote: "Go", votedAt: "2024-01-16 11:45" },
-  { id: "11", name: "Frank Wilson", email: "frank@example.com", vote: "Python", votedAt: "2024-01-16 14:20" },
-  { id: "12", name: "Grace Brown", email: "grace@example.com", vote: "JavaScript", votedAt: "2024-01-16 15:30" },
-]
+// const mockVoters: Voter[] = [
+//   { id: "1", name: "John Doe", email: "john@example.com", vote: "JavaScript", votedAt: "2024-01-15 10:30" },
+//   { id: "2", name: "Jane Smith", email: "jane@example.com", vote: "Python", votedAt: "2024-01-15 11:15" },
+//   { id: "3", name: "Mike Johnson", email: "mike@example.com", vote: "TypeScript", votedAt: "2024-01-15 12:00" },
+//   { id: "4", name: "Sarah Wilson", email: "sarah@example.com", vote: "JavaScript", votedAt: "2024-01-15 14:20" },
+//   { id: "5", name: "Tom Brown", email: "tom@example.com", vote: "Go", votedAt: "2024-01-15 15:45" },
+//   { id: "6", name: "Alice Johnson", email: "alice@example.com", vote: "JavaScript", votedAt: "2024-01-15 16:30" },
+//   { id: "7", name: "Bob Williams", email: "bob@example.com", vote: "Python", votedAt: "2024-01-15 17:15" },
+//   { id: "8", name: "Carol Davis", email: "carol@example.com", vote: "TypeScript", votedAt: "2024-01-16 09:00" },
+//   { id: "9", name: "David Miller", email: "david@example.com", vote: "JavaScript", votedAt: "2024-01-16 10:30" },
+//   { id: "10", name: "Eva Garcia", email: "eva@example.com", vote: "Go", votedAt: "2024-01-16 11:45" },
+//   { id: "11", name: "Frank Wilson", email: "frank@example.com", vote: "Python", votedAt: "2024-01-16 14:20" },
+//   { id: "12", name: "Grace Brown", email: "grace@example.com", vote: "JavaScript", votedAt: "2024-01-16 15:30" },
+// ]
 
 const PollAnalytics = ({ params }: { params: { id: string } }) => {
 
   const pollId = params.id
   const router = useRouter()
   const [poll, setPoll] = useState<Poll | null>(null)
-  const [allVoters, setAllVoters] = useState<Voter[]>([])
+  const [allVoters, setAllVoters] = useState<Votes[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [voteFilter, setVoteFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const votersPerPage = 10
+  const votersPerPage = 100
+
   useEffect(() => {
     const session = sessionStorage.getItem("auth")
     if (!session) {
@@ -105,46 +118,88 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
   }, [])
 
   useEffect(() => {
-    const foundPoll = mockPolls.find(p => p.id === pollId)
-    setPoll(foundPoll || null)
+    const getPoll = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/poll/${pollId}`)
+        console.log("poll", response.data)
+        setPoll(response.data)
+      } catch (error) {
+        console.log(error)
+      }
+    };
 
-    // Filter voters based on the poll options
-    if (foundPoll) {
-      const pollOptions = foundPoll.options.map(opt => opt.text)
-      const filteredVoters = mockVoters.filter(voter => pollOptions.includes(voter.vote))
-      setAllVoters(filteredVoters)
-    }
-  }, [pollId])
+    const getVoters = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/votes/poll/11`)
+        console.log("voters", response.data)
+        setAllVoters(response.data)
+      } catch (error) {
+        console.log(error)
+      }
+    };
 
-  const handleDeletePoll = () => {
+    getPoll();
+    getVoters();
+
+  }, [])
+
+
+  // useEffect(() => {
+  //   const foundPoll = mockPolls.find(p => p.id === pollId)
+  //   setPoll(foundPoll || null)
+
+  //   // Filter voters based on the poll options
+  //   if (foundPoll) {
+  //     const pollOptions = foundPoll.options.map(opt => opt.text)
+  //     const filteredVoters = mockVoters.filter(voter => pollOptions.includes(voter.vote))
+  //     setAllVoters(filteredVoters)
+  //   }
+  // }, [pollId])
+
+  const handleDeletePoll = async () => {
     if (window.confirm("Are you sure you want to delete this poll? This action cannot be undone.")) {
-      console.log("Deleting poll:", pollId)
-      router.push("/admin/poll")
+      try {
+        const response = await axios.delete(`http://localhost:8000/poll/${pollId}`)
+        if (response.status === 200) {
+          router.push("/admin/poll")
+        }
+      } catch (error) {
+        console.log(error)
+      }
     }
   }
 
-  const handleDeleteVote = (voterId: string) => {
+  const handleDeleteVote = async (voterId: string) => {
     if (window.confirm("Are you sure you want to delete this vote?")) {
-      setAllVoters(allVoters.filter(voter => voter.id !== voterId))
-      setCurrentPage(1) // Reset to first page after deletion
+      try {
+        const response = await axios.delete(`http://localhost:8000/votes/${voterId}`)
+        if (response.status === 200) {
+          setAllVoters(allVoters.filter(voter => voter.id !== voterId))
+          setCurrentPage(1)
+        }
+      } catch (error) {
+        console.log(error)
+      }
+
     }
   }
+
 
   // Filter voters based on search and vote filter
-  const filteredVoters = allVoters.filter(voter => {
-    const matchesSearch =
-      voter.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      voter.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesVote = voteFilter === "all" || voter.vote === voteFilter
+  // const filteredVoters = allVoters.filter(voter => {
+  //   const matchesSearch =
+  //     voter.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     voter.email.toLowerCase().includes(searchTerm.toLowerCase())
+  //   const matchesVote = voteFilter === "all" || voter.vote === voteFilter
 
-    return matchesSearch && matchesVote
-  })
+  //   return matchesSearch && matchesVote
+  // })
 
   // Pagination logic
-  const indexOfLastVoter = currentPage * votersPerPage
-  const indexOfFirstVoter = indexOfLastVoter - votersPerPage
-  const currentVoters = filteredVoters.slice(indexOfFirstVoter, indexOfLastVoter)
-  const totalPages = Math.ceil(filteredVoters.length / votersPerPage)
+  // const indexOfLastVoter = currentPage * votersPerPage
+  // const indexOfFirstVoter = indexOfLastVoter - votersPerPage
+  // const currentVoters = filteredVoters.slice(indexOfFirstVoter, indexOfLastVoter)
+  // const totalPages = Math.ceil(filteredVoters.length / votersPerPage)
 
   // Get unique vote options for filter dropdown
   const voteOptions = poll ? [...new Set(poll.options.map(opt => opt.text))] : []
@@ -165,14 +220,14 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
 
   const chartData = poll.options.map((option, index) => ({
     name: option.text,
-    votes: option.votes,
-    percentage: Math.round((option.votes / poll.totalVotes) * 100),
+    votes: option.votes.length,
+    percentage: Math.round((option.votes.length / allVoters.length) * 100),
     color: `hsl(${(index * 137.5) % 360}, 70%, 50%)`,
   }))
 
   const pieData = poll.options.map((option, index) => ({
     name: option.text,
-    value: option.votes,
+    value: option.votes.length,
     color: `hsl(${(index * 137.5) % 360}, 70%, 50%)`,
   }))
 
@@ -189,11 +244,11 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
           <div>
             <h1 className="text-3xl font-bold">{poll.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={poll.isActive ? "default" : "secondary"}>
-                {poll.isActive ? "Active" : "Inactive"}
+              <Badge variant={poll.active ? "default" : "secondary"}>
+                {poll.active ? "Active" : "Inactive"}
               </Badge>
               <span className="text-sm text-muted-foreground">
-                {poll.totalVotes} votes • {poll.options.length} options
+                {allVoters.length} votes • {poll.options.length} options
               </span>
             </div>
           </div>
@@ -205,14 +260,14 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Votes</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{poll.totalVotes}</div>
+            <div className="text-2xl font-bold">{allVoters.length}</div>
             <p className="text-xs text-muted-foreground">
               {allVoters.length} unique voters
             </p>
@@ -228,21 +283,6 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
             <div className="text-2xl font-bold">{poll.options.length}</div>
             <p className="text-xs text-muted-foreground">
               Multiple choice poll
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Participation Rate</CardTitle>
-            <PieChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round((poll.totalVotes / 150) * 100)}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Based on 150 potential voters
             </p>
           </CardContent>
         </Card>
@@ -264,7 +304,7 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
                   formatter={(value) => [`${value} votes`, 'Votes']}
                   labelFormatter={(label) => `Option: ${label}`}
                 />
-                <Bar dataKey="votes" fill="hsl(var(--primary))" />
+                <Bar dataKey="votes" fill="#8884d8" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -304,12 +344,12 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Voters List ({filteredVoters.length} voters)
+            Voters List ({allVoters.length} voters)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -335,7 +375,7 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
                 <option key={option} value={option}>{option}</option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           {/* Voters Table */}
           <div className="border rounded-lg">
@@ -350,19 +390,19 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentVoters.map((voter) => (
-                  <TableRow key={voter.id}>
-                    <TableCell className="font-medium">{voter.name}</TableCell>
-                    <TableCell className="text-sm">{voter.email}</TableCell>
+                {allVoters.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell className="font-medium">{entry.voter.name}</TableCell>
+                    <TableCell className="text-sm">{entry.voter.email}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{voter.vote}</Badge>
+                      <Badge variant="outline">{entry.option.text}</Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{voter.votedAt}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{entry.createdAt}</TableCell>
                     <TableCell>
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDeleteVote(voter.id)}
+                        onClick={() => handleDeleteVote(entry.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -372,15 +412,15 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
               </TableBody>
             </Table>
 
-            {currentVoters.length === 0 && (
+            {/* {currentVoters.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 {filteredVoters.length === 0 ? "No voters found matching your criteria." : "No voters on this page."}
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {/* {totalPages > 1 && (
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
                 Showing {indexOfFirstVoter + 1}-{Math.min(indexOfLastVoter, filteredVoters.length)} of{" "}
@@ -413,10 +453,10 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
                 </Button>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Pagination for smaller screens */}
-          {totalPages > 1 && (
+          {/* {totalPages > 1 && (
             <div className="flex flex-col sm:hidden items-center gap-2">
               <div className="text-sm text-muted-foreground text-center">
                 Page {currentPage} of {totalPages}
@@ -442,7 +482,7 @@ const PollAnalytics = ({ params }: { params: { id: string } }) => {
                 </Button>
               </div>
             </div>
-          )}
+          )} */}
         </CardContent>
       </Card>
     </div>

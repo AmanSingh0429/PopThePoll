@@ -8,19 +8,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
+import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 
 type AdminLoginProps = {
   onLogin: (email: string) => void
 }
 
-const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
+const AdminLogin: React.FC<AdminLoginProps> = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   const handleLogin = () => {
-    // Basic email/password validation (replace with secure authentication)
     if (email === "admin@example.com" && password === "password") {
       const userData = {
         isLoggedIn: true,
@@ -34,17 +35,28 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
     }
   }
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
   return (
-    <>
-      <div className="flex justify-center items-center h-screen">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Admin Login</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {error && <p className="text-red-500">{error}</p>}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+    <div className="flex justify-center items-center h-screen">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-center">Admin Login</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && (
+            <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Email
+            </Label>
+            <div className="relative">
               <Input
                 id="email"
                 type="email"
@@ -53,23 +65,55 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="flex items-center gap-2">
+              <Lock className="w-4 h-4" />
+              Password
+            </Label>
+            <div className="relative">
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="pr-10"
               />
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={togglePasswordVisibility}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <Eye className="h-4 w-4 text-gray-400" />
+                )}
+              </Button>
             </div>
-            <Button className="w-full" onClick={handleLogin}>
-              Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </>
+          </div>
+
+          <Button
+            className="w-full"
+            onClick={handleLogin}
+            size="lg"
+          >
+            Login
+          </Button>
+
+          <div className="text-center text-sm text-gray-500 mt-4">
+            <p>Demo credentials:</p>
+            <p>Email: admin@example.com</p>
+            <p>Password: password</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 
